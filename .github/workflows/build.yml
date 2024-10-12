@@ -1,0 +1,67 @@
+name: Build AmxxEasyHttp
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install dependencies (Linux)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++  # Instalează dependențele necesare pentru Linux
+
+      - name: Build (Linux)
+        run: |
+          mkdir -p Release
+          cd Release
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          make easy_http  # Asigură-te că make creează fișierul .so pentru Linux
+
+      - name: Archive Release (Linux)
+        run: |
+          zip -r amxxeasyhttp-linux.zip Release/  # Creează o arhivă ZIP din directorul Release
+
+      - name: Upload artifact (Linux)
+        uses: actions/upload-artifact@v3
+        with:
+          name: amxxeasyhttp-linux
+          path: amxxeasyhttp-linux.zip  # Încarcă arhiva ZIP creată
+
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install dependencies (Windows)
+        run: |
+          choco install cmake  # Instalează CMake pe Windows
+          choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --includeRecommended --quiet"  # Instalează MSVC
+
+      - name: Build (Windows)
+        run: |
+          mkdir Release
+          cd Release
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --target easy_http --config Release
+      - name: Archive Release (Windows)
+        run: |
+          powershell Compress-Archive -Path Release\* -DestinationPath amxxeasyhttp-windows.zip
+      - name: Upload artifact (Windows)
+        uses: actions/upload-artifact@v3
+        with:
+          name: amxxeasyhttp-windows
+          path: amxxeasyhttp-windows.zip
